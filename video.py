@@ -28,7 +28,7 @@ texts = split_text(full_text)
 # 텍스트 이미지를 생성하는 함수
 def create_text_image(text, font_path):
     font = ImageFont.truetype(font_path, 40)
-    image = Image.new('RGB', (1080, 1920), color='black')
+    image = Image.new('RGB', (1080, 384), color='black')
     draw = ImageDraw.Draw(image)
 
     y_position = image.height - 250  # 아래쪽에서 여백을 주고 시작

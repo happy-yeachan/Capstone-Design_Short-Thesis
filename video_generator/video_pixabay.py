@@ -2,8 +2,7 @@ import requests
 import os
 import random
 from dotenv import load_dotenv
-from moviepy.editor import VideoFileClip
-from keyword_extraction import extract_keywords
+from video_generator.keyword_extraction import extract_keywords
 
 load_dotenv()  # .env 파일에서 환경 변수 불러오기
 API_KEY = os.getenv("PIXABAY_API_KEY")

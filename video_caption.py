@@ -24,7 +24,7 @@ def add_automatic_subtitles(script):
     current_time = 0  # 자막 시작 시간
 
     for chunk in chunks:
-        subtitle_clip = (TextClip(chunk, fontsize=50, color='white', font='asset/pont.ttf', bg_color='black')
+        subtitle_clip = (TextClip(chunk, fontsize=50, color='white', font='pont.ttf', bg_color='black')
                          .set_position(('center', int(0.6 * video_height)))  # 직접 계산된 위치 사용
                          .set_duration(text_duration)
                          .set_start(current_time))

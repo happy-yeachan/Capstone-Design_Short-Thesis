@@ -16,30 +16,30 @@ def pixabay(text, tag):
 
     paths = []
     for query in querys:
-        url = f'https://pixabay.com/api/videos/?key={API_KEY}&q={query}&lang=ko&category={tag}'  # 언어 파라미터 추가
 
+        url = f'https://pixabay.com/api/videos/?key={API_KEY}&q={query}&lang=ko&category={tag}'  # 언어 파라미터 추가
         # API 호출
         response = requests.get(url)
         data = response.json()
 
-        # 결과에서 랜덤 비디오 URL 가져오기
-        if 'hits' in data and len(data['hits']) > 0:
-            random_video = random.choice(data['hits'])  # 랜덤으로 하나 선택
-            video_url = random_video['videos']['medium']['url']
-            print(f"비디오 키워드: {query}")
+        if 'hits' in data and len(data['hits']) <= 0:
+            url = f'https://pixabay.com/api/videos/?key={API_KEY}&q={query}&lang=ko'
+            response = requests.get(url)
+            data = response.json()
 
-            # 비디오 다운로드 및 크기 조정
-            video_response = requests.get(video_url, stream=True)
+        random_video = random.choice(data['hits'])  # 랜덤으로 하나 선택
+        video_url = random_video['videos']['medium']['url']
+        print(f"비디오 키워드: {query}")
 
-            # 저장할 비디오 파일 경로
-            video_filename = f'asset/video_{i}.mp4'
-            with open(video_filename, 'wb') as f:
-                f.write(video_response.content)
-            print('비디오가 성공적으로 저장되었습니다.')
-            i += 1
-            paths.append(video_filename)
+        # 비디오 다운로드 및 크기 조정
+        video_response = requests.get(video_url, stream=True)
 
-        else:
-            print(f'{query} 비디오를 찾을 수 없습니다.')
+        # 저장할 비디오 파일 경로
+        video_filename = f'asset/video_{i}.mp4'
+        with open(video_filename, 'wb') as f:
+            f.write(video_response.content)
+        print('비디오가 성공적으로 저장되었습니다.')
+        i += 1
+        paths.append(video_filename)
 
     return paths

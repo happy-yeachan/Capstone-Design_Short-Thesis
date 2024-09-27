@@ -1,7 +1,7 @@
 from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip, AudioFileClip
 
 # 자막을 대본으로 자동 생성하는 함수
-def add_automatic_subtitles(script):
+def add_automatic_subtitles(script, tag):
     # 비디오 파일 로드
     video_clip = VideoFileClip("asset/video.mp4")
     video_height = video_clip.h  # 비디오 높이 계산
@@ -37,7 +37,7 @@ def add_automatic_subtitles(script):
     final_video = final_video.set_audio(audio_clip)
     
     # 최종 비디오 저장
-    final_video.write_videofile("최종.mp4", fps=24)
+    final_video.write_videofile(f"result/{tag}/{script[6:11]}.mp4", fps=24)
 
 # 글자 수에 맞춰 비슷한 길이로 나누는 함수
 def split_text(text, chunk_size=25):  # chunk_size 조정 가능

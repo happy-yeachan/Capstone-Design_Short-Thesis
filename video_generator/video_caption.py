@@ -1,6 +1,27 @@
 from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip, AudioFileClip
+import os
 
-# 자막을 대본으로 자동 생성하는 함수
+
+def get_next_video_number(directory):
+    # 디렉토리 내 파일 목록을 가져오기
+    files = os.listdir(directory)
+    
+    # 숫자로 끝나는 .mp4 파일 필터링 및 숫자 추출
+    numbers = []
+    for file in files:
+        if file.endswith(".mp4"):
+            try:
+                # 파일 이름에서 숫자 부분만 추출 (예: 5.mp4 -> 5)
+                num = int(file.split(".")[0])
+                numbers.append(num)
+            except ValueError:
+                continue  # 숫자가 아닌 경우 무시
+    
+    if numbers:
+        return max(numbers) + 1  # 가장 큰 숫자에 1을 더해 반환
+    else:
+        return 1  # 파일이 없으면 1부터 시작
+
 def add_automatic_subtitles(script, tag):
     # 비디오 파일 로드
     video_clip = VideoFileClip("asset/video.mp4")
@@ -14,7 +35,7 @@ def add_automatic_subtitles(script, tag):
     texts = split_text(script)
 
     # 텍스트에 대한 클립 길이 계산
-    text_duration = audio_duration / len(texts) + 0.07
+    text_duration = audio_duration / len(texts) + 0.1
 
     # 대본을 일정 글자 수로 나누기
     chunks = split_text(script)
@@ -35,9 +56,18 @@ def add_automatic_subtitles(script, tag):
     # 자막과 비디오 합성
     final_video = CompositeVideoClip([video_clip] + subtitle_clips)
     final_video = final_video.set_audio(audio_clip)
-    
-    # 최종 비디오 저장
-    final_video.write_videofile(f"result/{tag}/{script[6:11]}.mp4", fps=24)
+
+    # 저장할 디렉토리 경로
+    output_directory = f"result/{tag}"
+
+    # 디렉토리가 없으면 생성
+    os.makedirs(output_directory, exist_ok=True)
+
+    # 저장할 파일의 다음 번호 가져오기
+    next_number = get_next_video_number(output_directory)
+
+    # 최종 비디오 저장 (ex: 5.mp4)
+    final_video.write_videofile(f"{output_directory}/{next_number}.mp4", fps=24)
 
 # 글자 수에 맞춰 비슷한 길이로 나누는 함수
 def split_text(text, chunk_size=25):  # chunk_size 조정 가능

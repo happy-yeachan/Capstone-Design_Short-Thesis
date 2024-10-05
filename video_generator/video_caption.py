@@ -22,7 +22,7 @@ def get_next_video_number(directory):
     else:
         return 1  # 파일이 없으면 1부터 시작
 
-def add_automatic_subtitles(script, tag):
+def add_caption(script, tag):
     # 비디오 파일 로드
     video_clip = VideoFileClip("asset/video.mp4")
     video_height = video_clip.h  # 비디오 높이 계산

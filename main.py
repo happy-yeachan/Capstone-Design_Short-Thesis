@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from video_generator.TTS import tts
 from video_generator.video_main import merge_videos_with_duration
 from video_generator.video_pixabay import pixabay
-from video_generator.video_caption import add_automatic_subtitles
+from video_generator.video_caption import add_caption
 
 import os
 
@@ -21,19 +21,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/test")
+@app.post("/movie")
 async def root(text: str, tag: str):
     tts(text)
-    paths = pixabay(text, tag)
+    paths = pixabay(text)
     merge_videos_with_duration(paths)
-    add_automatic_subtitles(text, tag)
+    add_caption(text, tag)
 
     return {"message": "Hello World"}
 
 
-@app.get("/video/{category}/{filename}", response_class=FileResponse)
-async def serve_video(category: str, filename: str):
-    UPLOAD_DIRECTORY = f"result/{category}"
+@app.get("/video/{tag}/{filename}", response_class=FileResponse)
+async def serve_video(tag: str, filename: str):
+    UPLOAD_DIRECTORY = f"result/{tag}"
     file_path = os.path.join(UPLOAD_DIRECTORY, filename)  # 파일 경로 생성
 
     if os.path.exists(file_path):

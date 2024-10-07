@@ -58,7 +58,7 @@ def add_caption(script, tag):
     final_video = final_video.set_audio(audio_clip)
 
     # 저장할 디렉토리 경로
-    output_directory = f"results/{tag}"
+    output_directory = f"videos/{tag}"
 
     # 디렉토리가 없으면 생성
     os.makedirs(output_directory, exist_ok=True)

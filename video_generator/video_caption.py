@@ -58,7 +58,7 @@ def add_caption(script, tag):
     final_video = final_video.set_audio(audio_clip)
 
     # 저장할 디렉토리 경로
-    output_directory = f"result/{tag}"
+    output_directory = f"results/{tag}"
 
     # 디렉토리가 없으면 생성
     os.makedirs(output_directory, exist_ok=True)
@@ -68,6 +68,8 @@ def add_caption(script, tag):
 
     # 최종 비디오 저장 (ex: 5.mp4)
     final_video.write_videofile(f"{output_directory}/{next_number}.mp4", fps=24)
+
+    return f"{output_directory}/{next_number}.mp4"
 
 # 글자 수에 맞춰 비슷한 길이로 나누는 함수
 def split_text(text, chunk_size=25):  # chunk_size 조정 가능

@@ -26,9 +26,9 @@ async def root(text: str, tag: str):
     tts(text)
     paths = pixabay(text)
     merge_videos_with_duration(paths)
-    add_caption(text, tag)
+    url = add_caption(text, tag)
 
-    return {"message": "Hello World"}
+    return url
 
 
 @app.get("/video/{tag}/{filename}", response_class=FileResponse)

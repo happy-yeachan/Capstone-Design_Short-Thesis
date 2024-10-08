@@ -1,6 +1,15 @@
 from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip, AudioFileClip
 import os
+import shutil
 
+def clean_asset_folder(directory="asset"):
+    # asset 디렉토리가 있는지 확인
+    if os.path.exists(directory):
+        # 디렉토리 내 파일을 모두 삭제
+        shutil.rmtree(directory)
+        print(f"{directory} 폴더의 모든 파일을 삭제했습니다.")
+    else:
+        print(f"{directory} 폴더가 존재하지 않습니다.")
 
 def get_next_video_number(directory):
     # 디렉토리 내 파일 목록을 가져오기
@@ -69,6 +78,8 @@ def add_caption(script, tag):
     # 최종 비디오 저장 (ex: 5.mp4)
     final_video.write_videofile(f"{output_directory}/{next_number}.mp4", fps=24)
 
+    clean_asset_folder()
+    
     return f"{output_directory}/{next_number}.mp4"
 
 # 글자 수에 맞춰 비슷한 길이로 나누는 함수

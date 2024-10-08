@@ -31,7 +31,7 @@ async def root(text: str, tag: str):
     return url
 
 
-@app.get("/video/{tag}/{filename}", response_class=FileResponse)
+@app.get("/videos/{tag}/{filename}", response_class=FileResponse)
 async def serve_video(tag: str, filename: str):
     UPLOAD_DIRECTORY = f"videos/{tag}"
     file_path = os.path.join(UPLOAD_DIRECTORY, filename)  # 파일 경로 생성

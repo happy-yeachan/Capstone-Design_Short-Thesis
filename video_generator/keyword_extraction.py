@@ -6,7 +6,7 @@ okt = Okt()
 
 def extract_keywords(text, num_keywords=6, exclude_keywords=None):
     if exclude_keywords is None:
-        exclude_keywords = ["논문"]
+        exclude_keywords = ["논문", "오늘"]
 
     # 명사 추출
     nouns = okt.nouns(text)

@@ -209,10 +209,14 @@ def pixabay(text):
         response = requests.get(url)
         data = response.json()
 
-        if 'hits' in data and len(data['hits']) <= 0:
+        if 'hits' in data and len(data['hits']) == 0:
             url = f'https://pixabay.com/api/videos/?key={API_KEY}&q={query}&lang=ko'
             response = requests.get(url)
             data = response.json()
+
+        if not data['hits']:
+            print(f"Pixabay에서 {query} 키워드에 대한 영상을 찾을 수 없습니다.")
+            continue
 
         random_video = random.choice(data['hits'])  # 랜덤으로 하나 선택
         video_url = random_video['videos']['medium']['url']

@@ -1,36 +1,48 @@
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-
+import os
 from video_generator.TTS import tts
 from video_generator.video_main import merge_videos_with_duration
 from video_generator.video_pixabay import pixabay
+from video_generator.video_pexels import pexels_api
 from video_generator.video_caption import add_caption
-
-import os
 
 app = FastAPI()
 
-
-# CORS 설정: 모든 출처에서 접근 가능하도록 설정 (필요에 따라 도메인 제한 가능)
+# CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 특정 도메인만 허용하려면 "*" 대신 도메인 입력
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.post("/movie")
-async def root(text: str, tag: str):
+# 비디오 생성 상태와 결과를 저장하는 딕셔너리
+video_status = {}
+
+# 비디오 생성 작업을 비동기로 실행할 함수
+async def process_video(text: str, tag: str, thesis_id: str):
     tts(text)
     paths = pixabay(text)
     merge_videos_with_duration(paths)
     url = add_caption(text, tag)
 
-    return url
+    # 비디오 생성 완료 후 URL 저장
+    video_status[thesis_id] = url
 
+# POST 요청 처리 (비디오 제작 요청 및 백그라운드 처리)
+@app.post("/movie")
+async def create_movie(thesis_id: str, text: str, tag: str, background_tasks: BackgroundTasks):
+    # 비디오 제작을 백그라운드에서 처리하도록 설정
+    background_tasks.add_task(process_video, text, tag, thesis_id)
 
+    # 작업이 시작되었음을 즉시 응답
+    video_status[thesis_id] = "processing"
+    return {"message": "Video creation in progress", "thesis_id": thesis_id}
+
+# GET 요청 처리 (비디오 상태 및 파일 반환)
 @app.get("/videos/{tag}/{filename}", response_class=FileResponse)
 async def serve_video(tag: str, filename: str):
     UPLOAD_DIRECTORY = f"videos/{tag}"
@@ -41,3 +53,8 @@ async def serve_video(tag: str, filename: str):
     else:
         return {"error": "File not found"}  # 파일이 없을 경우 에러 반환
 
+# 비디오 상태 확인 엔드포인트
+@app.get("/status/{thesis_id}")
+async def get_video_status(thesis_id: str):
+    status = video_status.get(thesis_id, "not found")
+    return {"status": status}

@@ -19,28 +19,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 비디오 생성 상태와 결과를 저장하는 딕셔너리
-video_status = {}
-
 # 비디오 생성 작업을 비동기로 실행할 함수
-async def process_video(text: str, tag: str, thesis_id: str):
+async def process_video(text: str, tag: str, id: str):
     tts(text)
     paths = pixabay(text)
     merge_videos_with_duration(paths)
     url = add_caption(text, tag)
-
-    # 비디오 생성 완료 후 URL 저장
-    video_status[thesis_id] = url
+    
 
 # POST 요청 처리 (비디오 제작 요청 및 백그라운드 처리)
 @app.post("/movie")
-async def create_movie(thesis_id: str, text: str, tag: str, background_tasks: BackgroundTasks):
+async def create_movie(id: str, text: str, tag: str, background_tasks: BackgroundTasks):
     # 비디오 제작을 백그라운드에서 처리하도록 설정
-    background_tasks.add_task(process_video, text, tag, thesis_id)
+    background_tasks.add_task(process_video, text, tag, id)
 
-    # 작업이 시작되었음을 즉시 응답
-    video_status[thesis_id] = "processing"
-    return {"message": "Video creation in progress", "thesis_id": thesis_id}
+    return {"message": "Video creation in progress", "id": id}
 
 # GET 요청 처리 (비디오 상태 및 파일 반환)
 @app.get("/videos/{tag}/{filename}", response_class=FileResponse)
@@ -53,8 +46,3 @@ async def serve_video(tag: str, filename: str):
     else:
         return {"error": "File not found"}  # 파일이 없을 경우 에러 반환
 
-# 비디오 상태 확인 엔드포인트
-@app.get("/status/{thesis_id}")
-async def get_video_status(thesis_id: str):
-    status = video_status.get(thesis_id, "not found")
-    return {"status": status}

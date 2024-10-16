@@ -7,6 +7,7 @@ from video_generator.video_main import merge_videos_with_duration
 from video_generator.video_pixabay import pixabay
 from video_generator.video_pexels import pexels_api
 from video_generator.video_caption import add_caption
+import requests
 
 app = FastAPI()
 
@@ -25,6 +26,12 @@ async def process_video(text: str, tag: str, id: str):
     paths = pixabay(text)
     merge_videos_with_duration(paths)
     url = add_caption(text, tag)
+    data = {
+        "articleId": id,
+        "videoUrl": url
+    }
+    response = requests.post("https://purely-funky-ladybug.ngrok-free.app/save/video", data=data)
+    print(response.status_code)
     
 
 # POST 요청 처리 (비디오 제작 요청 및 백그라운드 처리)

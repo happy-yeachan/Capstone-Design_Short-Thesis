@@ -3,6 +3,7 @@ import os
 import random
 from dotenv import load_dotenv
 from video_generator.keyword_extraction import extract_keywords
+import time
 
 load_dotenv()  # .env 파일에서 환경 변수 불러오기
 API_KEY = os.getenv("PIXABAY_API_KEY")
@@ -232,5 +233,6 @@ def pixabay(text):
         print('비디오가 성공적으로 저장되었습니다.')
         i += 1
         paths.append(video_filename)
+        time.sleep(1)  # 3초 대기
 
     return paths

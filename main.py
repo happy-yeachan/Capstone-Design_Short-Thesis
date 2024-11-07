@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from video_generator.TTS import tts
-from video_generator.video_main import merge_videos_with_duration
+from video_generator.video_caption_audio import merge_videos_with_duration
 from video_generator.video_pixabay import pixabay
 from video_generator.video_pexels import pexels_api
 from video_generator.video_caption import add_caption
@@ -25,12 +25,17 @@ async def process_video(text: str, tag: str, id: str):
     tts(text)
     paths = pixabay(text)
     merge_videos_with_duration(paths)
-    url = add_caption(text, tag)
+    url = add_caption(text, tag, id)
     data = {
         "articleId": id,
-        "videoUrl": url
+        "videoUrl": f"https://widely-select-polliwog.ngrok-free.app/{url}"
     }
-    response = requests.post("https://purely-funky-ladybug.ngrok-free.app/save/video", data=data)
+
+    headers = {
+        'ngrok-skip-browser-warning': '69420',
+    }
+
+    response = requests.post("https://purely-funky-ladybug.ngrok-free.app/save/video", data=data, headers=headers)
     print(response.status_code)
     
 

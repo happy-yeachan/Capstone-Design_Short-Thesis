@@ -3,10 +3,11 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from video_generator.TTS import tts
-from video_generator.video_caption_audio import merge_videos_with_duration
+from video_generator.video_audio import merge_videos_with_duration
 from video_generator.video_pixabay import pixabay
 from video_generator.video_pexels import pexels_api
 from video_generator.video_caption import add_caption
+from video_generator.keyword_extraction import extract_keywords, categorize_script
 import requests
 
 app = FastAPI()
@@ -23,7 +24,9 @@ app.add_middleware(
 # 비디오 생성 작업을 비동기로 실행할 함수
 async def process_video(text: str, tag: str, id: str):
     tts(text)
-    paths = pixabay(text)
+    keywords = extract_keywords(text)
+    category = categorize_script(text)
+    paths = pixabay(keywords, category)
     merge_videos_with_duration(paths)
     url = add_caption(text, tag, id)
     data = {

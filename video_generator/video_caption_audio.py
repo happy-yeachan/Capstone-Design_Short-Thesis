@@ -1,3 +1,4 @@
+import os
 from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
 
 def merge_videos_with_duration(video_paths, output_size=(1080, 1920)):
@@ -10,10 +11,23 @@ def merge_videos_with_duration(video_paths, output_size=(1080, 1920)):
     clips = []
     
     for video in video_paths:
-        clip = VideoFileClip(video)
-        original_durations.append(clip.duration)
-        clips.append(clip)
+        # 파일 경로에 특수 문자가 없는지 확인
+        if not os.path.exists(video):
+            print(f"파일이 존재하지 않음: {video}")
+            continue
+        
+        try:
+            clip = VideoFileClip(video)
+            original_durations.append(clip.duration)
+            clips.append(clip)
+        except UnicodeDecodeError as e:
+            print(f"파일 디코딩 중 오류 발생: {e}")
+            continue
     
+    if not clips:
+        print("처리할 비디오가 없습니다.")
+        return
+
     total_original_duration = sum(original_durations)
 
     # 각 비디오의 비율에 따라 새로운 길이 설정
@@ -35,8 +49,3 @@ def merge_videos_with_duration(video_paths, output_size=(1080, 1920)):
         clip.close()
     final_clip.close()
     audio_clip.close()
-
-
-# # 사용 예시
-# video_paths = ["asset/video1.mp4", "asset/video2.mp4", "asset/video3.mp4"]
-# merge_videos_with_duration(video_paths)

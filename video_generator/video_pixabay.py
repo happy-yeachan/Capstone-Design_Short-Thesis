@@ -195,6 +195,47 @@ def categorize_script(script):
 
     return best_category
 
+def fetch_video_with_retry(url, max_retries=3, timeout_duration=30):
+    retries = 0
+    while retries < max_retries:
+        try:
+            response = requests.get(url, stream=True, timeout=timeout_duration)
+            response.raise_for_status()  # 상태 코드가 200이 아닐 경우 예외 발생
+            return response
+        except requests.exceptions.Timeout:
+            retries += 1
+            print(f"Timeout occurred. Retrying... ({retries}/{max_retries})")
+            time.sleep(2)  # 재시도 전 대기 시간 추가
+        except requests.exceptions.RequestException as e:
+            print(f"Error occurred: {e}")
+            break
+    return None  # 모든 재시도가 실패한 경우 None 반환
+
+def download_video(video_url, filename, max_retries=3, initial_timeout_duration=30):
+    retries = 0
+    timeout_duration = initial_timeout_duration
+    while retries < max_retries:
+        try:
+            response = requests.get(video_url, stream=True, timeout=timeout_duration)
+            response.raise_for_status()
+
+            # 비디오를 청크 단위로 다운로드하여 저장
+            with open(filename, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+            print(f"비디오 {filename} 다운로드 성공")
+            return True
+        except requests.exceptions.Timeout:
+            retries += 1
+            timeout_duration += 20  # 재시도 시 타임아웃 시간을 20초씩 증가
+            print(f"비디오 다운로드 타임아웃. 재시도 중... ({retries}/{max_retries}), 타임아웃 시간: {timeout_duration}")
+            time.sleep(2)  # 재시도 전에 잠시 대기
+        except requests.exceptions.RequestException as e:
+            print(f"비디오 다운로드 오류 발생: {e}")
+            break
+    return False  # 모든 재시도가 실패한 경우 False 반환
+
 def pixabay(text):
     # 검색할 키워드와 요청 URL 설정 (비디오 검색)
     querys = extract_keywords(text)
@@ -204,18 +245,23 @@ def pixabay(text):
 
     paths = []
     for query in querys:
-
         url = f'https://pixabay.com/api/videos/?key={API_KEY}&q={query}&lang=ko&category={category}'  # 언어 파라미터 추가
-        # API 호출
-        response = requests.get(url)
-        data = response.json()
+        response = fetch_video_with_retry(url)  # 재시도 가능한 함수로 변경
+        if response is None:
+            print(f"{query} 키워드로 API 요청이 실패했습니다.")
+            continue
 
+        data = response.json()
         if 'hits' in data and len(data['hits']) == 0:
+            # 카테고리 없이 다시 시도
             url = f'https://pixabay.com/api/videos/?key={API_KEY}&q={query}&lang=ko'
-            response = requests.get(url)
+            response = fetch_video_with_retry(url)  # 재시도 가능한 함수로 변경
+            if response is None:
+                print(f"재요청 실패. {query} 키워드에 대한 영상을 찾을 수 없습니다.")
+                continue
             data = response.json()
 
-        if not data['hits']:
+        if 'hits' in data and len(data['hits']) == 0:
             print(f"Pixabay에서 {query} 키워드에 대한 영상을 찾을 수 없습니다.")
             continue
 
@@ -224,15 +270,13 @@ def pixabay(text):
         print(f"비디오 키워드: {query}")
 
         # 비디오 다운로드 및 크기 조정
-        video_response = requests.get(video_url, stream=True)
-
-        # 저장할 비디오 파일 경로
         video_filename = f'asset/video_{i}.mp4'
-        with open(video_filename, 'wb') as f:
-            f.write(video_response.content)
-        print('비디오가 성공적으로 저장되었습니다.')
-        i += 1
-        paths.append(video_filename)
-        time.sleep(1)  # 3초 대기
+        if download_video(video_url, video_filename):  # 재시도 가능한 비디오 다운로드 함수 사용
+            paths.append(video_filename)
+            i += 1
+        else:
+            print(f"비디오 다운로드 실패: {video_url}")
+        
+        time.sleep(1)  # 1초 대기
 
     return paths

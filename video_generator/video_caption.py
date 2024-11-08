@@ -1,6 +1,5 @@
 from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip, AudioFileClip
 import os
-import shutil
 
 def add_caption(script, tag, id):
     # 비디오 파일 로드
@@ -11,27 +10,29 @@ def add_caption(script, tag, id):
     audio_clip = AudioFileClip("asset/sound.mp3")
     audio_duration = audio_clip.duration
 
-    # 나눈 텍스트 리스트
+    # 문장 단위로 나눈 텍스트 리스트
     texts = split_text(script)
 
-    # 텍스트에 대한 클립 길이 계산
-    text_duration = audio_duration / len(texts) + 0.1
-
-    # 대본을 일정 글자 수로 나누기
-    chunks = split_text(script)
+    # 각 문장 길이에 비례한 자막 클립 길이 계산
+    total_text_length = sum(len(text) for text in texts)
+    subtitle_durations = [(len(text) / total_text_length) * audio_duration + 0.1 for text in texts]
 
     # 자막 클립 리스트 생성
     subtitle_clips = []
     current_time = 0  # 자막 시작 시간
 
-    for chunk in chunks:
-        subtitle_clip = (TextClip(chunk, fontsize=50, color='white', font='pont.ttf', bg_color='black')
-                         .set_position(('center', int(0.6 * video_height)))  # 직접 계산된 위치 사용
-                         .set_duration(text_duration)
-                         .set_start(current_time))
+    for i, chunk in enumerate(texts):
+        # 텍스트를 25자마다 줄바꿈, 줄 수 제한 없이 자막 클립 리스트로 나누기
+        wrapped_chunks = wrap_text(chunk, max_length=25)
 
-        subtitle_clips.append(subtitle_clip)
-        current_time += text_duration  # 다음 자막 시작 시간 계산
+        for wrapped_chunk in wrapped_chunks:
+            subtitle_clip = (TextClip(wrapped_chunk, fontsize=50, color='white', font='pont.ttf', bg_color='black')
+                             .set_position(('center', int(0.6 * video_height)))  # 직접 계산된 위치 사용
+                             .set_duration(subtitle_durations[i] / len(wrapped_chunks))
+                             .set_start(current_time))
+
+            subtitle_clips.append(subtitle_clip)
+            current_time += subtitle_durations[i] / len(wrapped_chunks)  # 각 클립 길이만큼 다음 자막 시작 시간 증가
 
     # 자막과 비디오 합성
     final_video = CompositeVideoClip([video_clip] + subtitle_clips)
@@ -43,29 +44,36 @@ def add_caption(script, tag, id):
     # 디렉토리가 없으면 생성
     os.makedirs(output_directory, exist_ok=True)
 
-
     # 최종 비디오 저장 (ex: 5.mp4)
     final_video.write_videofile(f"{output_directory}/{id}.mp4", fps=24)
     
     return f"{output_directory}/{id}.mp4"
 
-# 글자 수에 맞춰 비슷한 길이로 나누는 함수
-def split_text(text, chunk_size=25):  # chunk_size 조정 가능
-    chunks = []
-    current_chunk = ""
-
-    for char in text:
-        current_chunk += char
-        if len(current_chunk) >= chunk_size:  # 지정된 길이에 도달하면
-            chunks.append(current_chunk)
-            current_chunk = ""  # 다음 글자부터 새로 시작
-
-    if current_chunk:  # 남은 글자 추가
-        chunks.append(current_chunk)
-
+# ?, !, . 기준으로 텍스트를 나누는 함수
+def split_text(text):
+    import re
+    # ? ! . 만을 기준으로 텍스트 나누기
+    chunks = re.split(r'(?<=[?!\.])\s*', text)
+    # 빈 문자열 제거
+    chunks = [chunk for chunk in chunks if chunk]
     return chunks
 
+# 텍스트를 25자마다 줄바꿈하고 여러 자막으로 나누는 함수
+def wrap_text(text, max_length=30):
+    words = text.split()
+    lines = []
+    current_line = ""
 
-# # 예시 사용
-# script = "안녕하세요! 요즘 쇼핑, 그냥 물건 사는 것만으로 끝나지 않죠? 쇼핑이 하나의 즐거운 경험으로 변하고 있어요. 그래서 오늘은 이런 변화를 반영한 새로운 쇼핑센터에 대해 이야기해 볼게요. 우리 연구는 일본의 4곳의 쇼핑센터를 조사했어요. 그 결과, 이곳들은 곡선형 통로를 갖고 있어서 사람들이 끊임없이 움직이는 모습을 볼 수 있어요. 그리고 각 구역마다 독특한 테마가 있어서 걷는 동안 다양한 스토리를 체험할 수 있답니다. 리테일 샵, 레스토랑, 문화 공간도 각각의 영역이 잘 구분되어 있어서 더 흥미로워요. 이렇게 쇼핑센터가 하나의 테마파크처럼 변하고 있는 거죠. 여러분도 이런 곳에서 쇼핑해보고 싶지 않나요? 이처럼 쇼핑은 이제 단순한 소비가 아니라, 다양한 경험과 스토리를 제공하는 멋진 활동이 되었어요. 앞으로 더 많은 쇼핑센터가 이런 트렌드를 따라가게 될 거예요. 기대되지 않나요?"
-# add_automatic_subtitles(script)
+    for word in words:
+        # 현재 줄에 단어를 추가해도 max_length를 초과하지 않으면 추가
+        if len(current_line + " " + word) <= max_length:
+            current_line += (word + " ")
+        else:
+            lines.append(current_line.strip())
+            current_line = word + " "
+    
+    # 마지막 줄 추가
+    lines.append(current_line.strip())
+    
+    # 줄 수 제한 없이 자막 클립으로 나누어 반환
+    return lines
